@@ -1,0 +1,46 @@
+# Copy to terraform.tfvars and populate before running.
+# terraform.tfvars is gitignored — never commit real values.
+
+tenant_id       = "00000000-0000-0000-0000-000000000000"
+subscription_id = "00000000-0000-0000-0000-000000000000"
+environment     = "sandpit"
+
+# CyberArk
+cyberark_tenant             = "ABC1234"
+cyberark_domain             = "mycompany"
+cyberark_client_id          = "svc-terraform-ci@cyberark.cloud.ABC1234"
+cyberark_client_secret      = ""   # sensitive — set via env var TF_VAR_cyberark_client_secret
+cyberark_cpm_user           = "PasswordManager"
+cyberark_azure_platform_id  = "Azure"   # platform name as it appears in PVWA Platform Management
+
+# Object IDs of users/groups who should own app registrations in Azure AD
+app_owners = [
+  "00000000-0000-0000-0000-000000000000" # your AAD object ID
+]
+
+# Snowflake
+snowflake_resource_server_name    = "svc-snowflake-oauth-resource"
+snowflake_resource_identifier_uri = "api://svc-snowflake-oauth-resource-sandpit"
+
+snowflake_client_apps = [
+  { name = "svc-snowflake-etl" },
+  { name = "svc-snowflake-reporting" },
+  { name = "svc-snaplogic-snowflake" },
+  { name = "svc-matillion-snowflake" }
+]
+
+# Tableau
+tableau_apps = [
+  { name = "svc-tableau-datasource" }
+]
+
+# GitHub Actions (OIDC — no client secret created)
+github_actions_apps = [
+  {
+    name = "svc-github-actions-azure-devops"
+    federated_subjects = [
+      "repo:TobyAnscombe/YOUR_REPO:ref:refs/heads/main",
+      "repo:TobyAnscombe/YOUR_REPO:environment:sandpit"
+    ]
+  }
+]

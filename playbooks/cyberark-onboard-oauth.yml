@@ -1,0 +1,106 @@
+---
+# cyberark-onboard-oauth.yml
+#
+# Alternative to cyberark.tf — onboards Azure AD OAuth app registrations into
+# CyberArk for environments where the Terraform cyberark provider is unavailable
+# or for bulk imports. When used alongside cyberark.tf, skip this playbook.
+#
+# Accounts are created with automatic management enabled — CyberArk CPM creates
+# the initial Azure AD password on first verification. No secret value is required
+# here; CPM generates it from the Azure AD platform plugin.
+#
+# Prerequisites:
+#   - cyberark_api_authentication role (v1.0.1+)
+#   - cyberark_account_management role
+#   - az CLI authenticated to the target tenant
+#   Both roles must be on the Ansible role path.
+#
+# Usage:
+#   ansible-playbook playbooks/cyberark-onboard-oauth.yml \
+#     -e environment=sandpit
+#
+# Variables:
+#   environment    - sandpit | prod
+
+- name: Onboard OAuth app registrations to CyberArk
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - vars/cyberark_settings.yml
+
+  vars:
+    cyberark_safe_name: "OAuth-AppRegistrations-{{ environment }}"
+    aad_address: "login.microsoftonline.com/{{ azure_tenant_id }}"
+
+  pre_tasks:
+    - name: Validate required variables
+      ansible.builtin.fail:
+        msg: "environment must be set to sandpit or prod (-e environment=sandpit)"
+      when: environment is not defined or environment not in ['sandpit', 'prod']
+
+    - name: Read Terraform outputs for environment
+      ansible.builtin.command:
+        cmd: terraform output -json
+        chdir: "{{ playbook_dir }}/.."
+      register: terraform_output_raw
+      changed_when: false
+
+    - name: Parse Terraform outputs
+      ansible.builtin.set_fact:
+        tf_outputs: "{{ terraform_output_raw.stdout | from_json }}"
+
+    - name: Build OAuth app list from Terraform outputs
+      ansible.builtin.set_fact:
+        # All apps with a client credential (non-OIDC): Snowflake clients + Tableau
+        oauth_apps: >-
+          {{
+            (tf_outputs.snowflake_client_apps.value | dict2items |
+              map(attribute='value') | list) +
+            (tf_outputs.tableau_apps.value | dict2items |
+              map(attribute='value') | list)
+          }}
+
+    - name: Look up application object IDs from Azure AD
+      ansible.builtin.command:
+        cmd: >
+          az ad app show
+          --id {{ item.application_id }}
+          --query id -o tsv
+      register: object_id_results
+      loop: "{{ oauth_apps }}"
+      loop_control:
+        label: "{{ item.application_id }}"
+      changed_when: false
+
+  roles:
+    - role: cyberark-api-management
+
+  tasks:
+    - name: Onboard accounts (CPM creates initial password on first verification)
+      ansible.builtin.include_role:
+        name: cyberark-api-account-management
+      vars:
+        cyberark_account_safe: "{{ cyberark_safe_name }}"
+        cyberark_account_platform_id: "{{ cyberark_azure_platform_id }}"
+        cyberark_account_name: "{{ item.0.application_id }}-{{ environment }}"
+        cyberark_account_username: "{{ item.0.application_id }}"
+        cyberark_account_address: "{{ aad_address }}"
+        cyberark_account_secret: ""         # CPM creates the real password on first rotation
+        cyberark_account_secret_type: password
+        cyberark_account_secret_update: false
+        cyberark_account_automatic_management_enabled: true
+        cyberark_account_platform_properties:
+          MSAppID: "{{ item.0.application_id }}"
+          MSAppObjectID: "{{ item.1.stdout }}"
+        cyberark_account_state: present
+      loop: "{{ oauth_apps | zip(object_id_results.results) | list }}"
+      loop_control:
+        label: "{{ item.0.application_id }}"
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg: >
+          Onboarded {{ oauth_apps | length }} accounts into {{ cyberark_safe_name }}.
+          CyberArk CPM will create the initial Azure AD password on first verification.

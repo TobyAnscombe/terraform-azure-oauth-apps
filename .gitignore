@@ -1,0 +1,16 @@
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+terraform.tfvars
+*.tfvars
+!*.tfvars.example
+tfplan
+crash.log
+
+# Ansible
+playbooks/vars/cyberark_settings.yml
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

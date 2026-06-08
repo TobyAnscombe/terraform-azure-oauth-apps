@@ -1,0 +1,22 @@
+# Copy to cyberark_settings.yml and populate before running.
+# cyberark_settings.yml is gitignored — never commit real values.
+# cyberark_client_secret must be Ansible-vault encrypted.
+
+# CyberArk Identity authentication (matches cyberark_api_authentication role v1.0.1+)
+cyberark_identity_tenant: "ABC1234"           # e.g. ACA4779 — forms <tenant>.id.cyberark.cloud
+cyberark_subdomain: "mycompany"               # Privilege Cloud subdomain
+cyberark_client_id: "svc-terraform-ci@cyberark.cloud.ABC1234"
+cyberark_client_secret: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  # ansible-vault encrypt_string 'your-secret-here' --name cyberark_client_secret
+
+# The Azure AD platform name as configured in PVWA Platform Management
+# (must match cyberark_azure_platform_id in terraform.tfvars)
+cyberark_azure_platform_id: "Azure"
+
+# CPM user assigned as safe owner and managing CPM
+cyberark_cpm_user: "PasswordManager"
+
+# Azure AD tenant ID — used to construct the account address
+# (login.microsoftonline.com/<tenant_id>)
+azure_tenant_id: "00000000-0000-0000-0000-000000000000"
