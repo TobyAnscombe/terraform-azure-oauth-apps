@@ -26,19 +26,8 @@ env:
   TF_VAR_cyberark_client_secret:      ${{ secrets.CYBERARK_CLIENT_SECRET }}
 
 jobs:
-  security-scan:
-    name: Security scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Gitleaks
-        run: |
-          wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
-          tar -xzf gitleaks_8.30.1_linux_x64.tar.gz gitleaks
-          ./gitleaks detect --source . --redact --exit-code 1
+  secret-scan:
+    uses: TobyAnscombe/github-actions/.github/workflows/gitleaks.yml@main
 
   validate:
     name: Validate
@@ -69,7 +58,7 @@ jobs:
   terraform:
     name: Terraform ${{ github.event_name == 'push' && 'Apply' || 'Plan' }}
     runs-on: ubuntu-latest
-    needs: [security-scan, validate]
+    needs: [secret-scan, validate]
     environment: ${{ github.ref_name == 'main' && 'prod' || 'sandpit' }}
 
     steps:
