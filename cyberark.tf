@@ -1,12 +1,3 @@
-terraform {
-  required_providers {
-    cyberark = {
-      source  = "cyberark/cyberark"
-      version = "~> 1.0"
-    }
-  }
-}
-
 provider "cyberark" {
   tenant        = var.cyberark_tenant
   domain        = var.cyberark_domain

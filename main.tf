@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.116"
     }
+    cyberark = {
+      source  = "cyberark/cyberark"
+      version = "~> 0.3"
+    }
   }
 
   backend "azurerm" {
