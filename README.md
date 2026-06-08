@@ -1050,11 +1050,11 @@ The workflow (`.github/workflows/terraform.yml`) runs three parallel jobs on eve
 
 | Job | Runs when | Purpose |
 |---|---|---|
-| `security-scan` | always | gitleaks v8.30.1 secret scan across all commits |
+| `secret-scan` | always | gitleaks secret scan via [TobyAnscombe/github-actions](https://github.com/TobyAnscombe/github-actions) — full history, SARIF uploaded to Security tab |
 | `validate` | always | `terraform validate` + tflint — no Azure credentials required |
-| `terraform` | after security-scan + validate pass | plan on PR, apply on push |
+| `terraform` | after secret-scan + validate pass | plan on PR, apply on push |
 
-The `terraform` job gates on `security-scan` and `validate` — a failed scan or lint error blocks apply.
+The `terraform` job gates on `secret-scan` and `validate` — a failed scan or lint error blocks apply.
 
 ### Required GitHub Actions variables and secrets
 
