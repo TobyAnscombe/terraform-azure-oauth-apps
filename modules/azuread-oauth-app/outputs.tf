@@ -1,6 +1,6 @@
 output "application_id" {
   description = "Application (client) ID — use as client_id in OAuth flows"
-  value       = azuread_application.this.application_id
+  value       = azuread_application.this.client_id
 }
 
 output "object_id" {

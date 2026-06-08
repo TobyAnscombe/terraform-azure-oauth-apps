@@ -52,8 +52,8 @@ resource "azuread_application" "this" {
 }
 
 resource "azuread_service_principal" "this" {
-  application_id = azuread_application.this.application_id
-  owners         = var.owners
+  client_id = azuread_application.this.client_id
+  owners    = var.owners
 }
 
 resource "azuread_application_federated_identity_credential" "this" {

@@ -8,13 +8,12 @@ provider "cyberark" {
 # Safe — created once, owns all OAuth accounts for this environment.
 resource "cyberark_safe" "oauth_registrations" {
   safe_name        = "OAuth-AppRegistrations-${var.environment}"
-  description      = "OAuth client credentials for Azure AD app registrations — managed by Terraform, rotated by CyberArk CPM"
+  safe_desc        = "OAuth client credentials for Azure AD app registrations — managed by Terraform, rotated by CyberArk CPM"
   member           = var.cyberark_cpm_user
   member_type      = "user"
   permission_level = "full"
-  managing_cpm     = var.cyberark_cpm_user
-
-  number_of_days_retention = 7
+  cpm_name         = var.cyberark_cpm_user
+  retention        = 7
 }
 
 locals {
@@ -31,12 +30,13 @@ resource "cyberark_azure_account" "snowflake_resource_server" {
   secret        = "PENDING_CPM_ROTATION"
   ms_app_id     = module.snowflake_resource_server.application_id
   ms_app_obj_id = module.snowflake_resource_server.object_id
+  ms_key_id     = "00000000-0000-0000-0000-000000000000"
   address       = local.aad_address
   sm_manage     = true
 
   lifecycle {
     # CPM creates and rotates the Azure AD password — ignore Vault-side value drift
-    ignore_changes = [secret]
+    ignore_changes = [secret, ms_key_id]
   }
 }
 
@@ -51,11 +51,12 @@ resource "cyberark_azure_account" "snowflake_clients" {
   secret        = "PENDING_CPM_ROTATION"
   ms_app_id     = each.value.application_id
   ms_app_obj_id = each.value.object_id
+  ms_key_id     = "00000000-0000-0000-0000-000000000000"
   address       = local.aad_address
   sm_manage     = true
 
   lifecycle {
-    ignore_changes = [secret]
+    ignore_changes = [secret, ms_key_id]
   }
 }
 
@@ -70,10 +71,11 @@ resource "cyberark_azure_account" "tableau" {
   secret        = "PENDING_CPM_ROTATION"
   ms_app_id     = each.value.application_id
   ms_app_obj_id = each.value.object_id
+  ms_key_id     = "00000000-0000-0000-0000-000000000000"
   address       = local.aad_address
   sm_manage     = true
 
   lifecycle {
-    ignore_changes = [secret]
+    ignore_changes = [secret, ms_key_id]
   }
 }
