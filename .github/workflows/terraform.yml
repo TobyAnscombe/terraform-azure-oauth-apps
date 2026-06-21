@@ -11,6 +11,7 @@ permissions:
   contents: read
   pull-requests: write
   security-events: write
+  administration: write
 
 env:
   ARM_CLIENT_ID:        ${{ vars.AZURE_CLIENT_ID }}
@@ -123,3 +124,12 @@ jobs:
           echo '```sql' >> $GITHUB_STEP_SUMMARY
           terraform output -raw snowflake_security_integration_sql >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
+
+  protect-main:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [secret-scan, validate]
+    uses: TobyAnscombe/github-actions/.github/workflows/branch-protection.yml@main
+    permissions:
+      administration: write
+    with:
+      required_checks: '["secret-scan / Scan for secrets"]'
